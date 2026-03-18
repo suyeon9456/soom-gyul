@@ -1,0 +1,122 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── AQI Color Tokens ───────────────────────────────── */
+:root {
+  /* GOOD */
+  --aqi-good:          #10b981;
+  --aqi-good-light:    #f0fdf4;
+  --aqi-good-border:   #a7f3d0;
+  --aqi-good-tag-bg:   #d1fae5;
+  --aqi-good-tag-text: #065f46;
+
+  /* MODERATE */
+  --aqi-moderate:          #f59e0b;
+  --aqi-moderate-light:    #fffbeb;
+  --aqi-moderate-border:   #fde68a;
+  --aqi-moderate-tag-bg:   #fef3c7;
+  --aqi-moderate-tag-text: #92400e;
+
+  /* BAD */
+  --aqi-bad:          #f97316;
+  --aqi-bad-light:    #fff7ed;
+  --aqi-bad-border:   #fed7aa;
+  --aqi-bad-tag-bg:   #ffedd5;
+  --aqi-bad-tag-text: #9a3412;
+
+  /* VERY BAD */
+  --aqi-very-bad:          #e11d48;
+  --aqi-very-bad-light:    #fff1f2;
+  --aqi-very-bad-border:   #fecdd3;
+  --aqi-very-bad-tag-bg:   #ffe4e6;
+  --aqi-very-bad-tag-text: #9f1239;
+}
+
+/* ─── Base ───────────────────────────────────────────── */
+body {
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+/* ─── CSS Keyframes ──────────────────────────────────── */
+
+/* Mesh gradient background motion */
+@keyframes mesh {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(5%, 5%) scale(1.1); }
+  66%  { transform: translate(-5%, 2%) scale(0.95); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+/* Particle float (opacity + translateY) */
+@keyframes particleFloat {
+  0%   { transform: translateY(0);      opacity: 0; }
+  20%  { opacity: 0.6; }
+  80%  { opacity: 0.6; }
+  100% { transform: translateY(-400px); opacity: 0; }
+}
+
+/* Fade in + slide up */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scale in */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  from { background-position: -200% center; }
+  to   { background-position:  200% center; }
+}
+
+/* Spin */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ─── Animation Utility Classes ─────────────────────── */
+@layer utilities {
+  .animate-mesh          { animation: mesh 20s ease-in-out infinite; }
+  .animate-particle      { animation: particleFloat linear infinite; }
+  .animate-fade-in-up    { animation: fadeInUp 0.5s ease-out both; }
+  .animate-scale-in      { animation: scaleIn 0.3s ease-out both; }
+  .animate-spin-icon     { animation: spin 1s linear infinite; }
+
+  /* Stagger delays */
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+
+  /* GPU hint */
+  .gpu { will-change: transform, opacity; }
+
+  .text-balance { text-wrap: balance; }
+
+  /* Hide scrollbar */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+/* ─── Skeleton ───────────────────────────────────────── */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #e2e8f0 25%,
+    #f1f5f9 50%,
+    #e2e8f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s linear infinite;
+}
