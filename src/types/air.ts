@@ -4,17 +4,17 @@ export type PersonaType = "child" | "adult" | "senior";
 
 export interface AqiLevel {
   label: string;
-  color: string;           // Tailwind bg class
-  text: string;            // Tailwind text class
-  bg: string;              // Tailwind bg-light class
-  border: string;          // Tailwind border class
-  statusTag: string;       // Tailwind combined class for tag
+  color: string; // Tailwind bg class
+  text: string; // Tailwind text class
+  bg: string; // Tailwind bg-light class
+  border: string; // Tailwind border class
+  statusTag: string; // Tailwind combined class for tag
   skyGradient: string;
   cityOpacity: string;
   cityBlur: string;
   particleColor: string;
   meshColors: [string, string, string, string];
-  iconName: string;        // lucide icon name string
+  iconName: string; // lucide icon name string
   desc: string;
 }
 
@@ -37,6 +37,7 @@ export interface Location {
   name: string;
   addr: string;
   iconType: "navigation" | "home" | "building" | "map";
+  stationName?: string; // 에어코리아 측정소명 (현 위치는 동적 결정)
 }
 
 export interface PersonaGuide {
