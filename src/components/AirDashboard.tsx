@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Wind, RefreshCw, MapPin, Plus } from "lucide-react";
+import { RefreshCw, MapPin, Plus } from "lucide-react";
 
 import MeshGradient from "./MeshGradient";
 import Skeleton from "./Skeleton";
@@ -192,9 +192,7 @@ export default function AirDashboard() {
         {/* Header */}
         <header className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
-            <div className="bg-blue-600 p-2 rounded-xl text-white shadow-lg">
-              <Wind size={20} />
-            </div>
+            <img src="/logo.png" alt="숨결" className="w-9 h-9 rounded-xl" />
             <h1 className="text-lg font-bold tracking-tight text-slate-800">
               숨결 실시간 대기
             </h1>
