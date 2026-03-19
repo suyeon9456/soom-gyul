@@ -13,6 +13,7 @@ import SkinCareAlert from "./SkinCareAlert";
 import CigaretteCard from "./CigaretteCard";
 import AddLocationModal from "./AddLocationModal";
 
+import { AppStorage } from "@/lib/storage";
 import { AQI_LEVELS, getPM25Grade, getPM10Grade } from "@/constants/aqi";
 import { STATIONS } from "@/constants/stations";
 import {
@@ -30,20 +31,6 @@ const DEFAULT_LOCATIONS: Location[] = [
     name: "현 위치",
     addr: "위치 확인 중...",
     iconType: "navigation",
-  },
-  {
-    id: "home",
-    name: "우리 집",
-    addr: "서울시 종로구",
-    iconType: "home",
-    stationName: "종로구",
-  },
-  {
-    id: "office",
-    name: "회사",
-    addr: "서울시 성동구",
-    iconType: "building",
-    stationName: "성동구",
   },
 ];
 
@@ -70,6 +57,17 @@ export default function AirDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [locations, setLocations] = useState<Location[]>(DEFAULT_LOCATIONS);
   const [locationData, setLocationData] = useState<LocationData[]>([]);
+
+  /* 저장된 위치 불러오기 */
+  useEffect(() => {
+    AppStorage.getItem("soomgyul-locations").then((raw) => {
+      if (!raw) return;
+      try {
+        const extra: Location[] = JSON.parse(raw);
+        if (extra.length) setLocations([...DEFAULT_LOCATIONS, ...extra]);
+      } catch {}
+    });
+  }, []);
 
   /* 현 위치 → 가장 가까운 측정소명 취득 */
   const resolveCurrentStation = useCallback(async (): Promise<string> => {
@@ -162,7 +160,12 @@ export default function AirDashboard() {
       iconType: "map",
       stationName: matched?.name,
     };
-    setLocations((prev) => [...prev, newLoc]);
+    setLocations((prev) => {
+      const next = [...prev, newLoc];
+      const extra = next.slice(DEFAULT_LOCATIONS.length);
+      AppStorage.setItem("soomgyul-locations", JSON.stringify(extra));
+      return next;
+    });
     setActiveIdx(locations.length);
     setIsModalOpen(false);
   };
@@ -266,12 +269,14 @@ export default function AirDashboard() {
               pm10Status={pm10Status}
               data={currentData}
             />
-            <ActivityIndices data={currentData} />
+            <ActivityIndices data={currentData} mainGrade={mainGrade} />
             <PersonaGuide
               activePersona={activePersona}
               onSelect={setActivePersona}
+              data={currentData}
+              mainGrade={mainGrade}
             />
-            <SkinCareAlert />
+            <SkinCareAlert data={currentData} mainGrade={mainGrade} />
             <CigaretteCard
               locationName={locations[activeIdx].name}
               cigarettes={currentData.cigarettes}
@@ -288,11 +293,7 @@ export default function AirDashboard() {
         )}
 
         <footer className="text-center pb-12 opacity-30">
-          <p className="text-sm font-bold uppercase tracking-[0.2em] leading-loose text-slate-800 font-mono">
-            에어코리아 실시간 대기질 데이터
-            <br />
-            한국환경공단 제공
-          </p>
+          <p className="text-sm font-bold uppercase tracking-[0.2em] leading-loose text-slate-800 font-mono"></p>
         </footer>
       </div>
     </div>

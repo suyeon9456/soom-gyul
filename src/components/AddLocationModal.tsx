@@ -8,6 +8,10 @@ interface Props {
   onClose: () => void;
 }
 
+const INPUT_CLS = `w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5
+  text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20
+  focus:border-blue-500 transition-all`;
+
 export default function AddLocationModal({ onAdd, onClose }: Props) {
   const [name, setName] = useState("");
   const [addr, setAddr] = useState("");
@@ -28,36 +32,21 @@ export default function AddLocationModal({ onAdd, onClose }: Props) {
           </button>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div>
             <label className="text-sm font-black text-slate-400 uppercase mb-1 block ml-1">장소 이름</label>
-            <input
-              type="text" value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="예: 공원"
-              className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5
-                         text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20
-                         focus:border-blue-500 transition-all"
-            />
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 공원" className={INPUT_CLS} />
           </div>
           <div>
             <label className="text-sm font-black text-slate-400 uppercase mb-1 block ml-1">상세 주소</label>
-            <input
-              type="text" value={addr}
-              onChange={(e) => setAddr(e.target.value)}
-              placeholder="예: 서울시 송파구"
-              className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5
-                         text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20
-                         focus:border-blue-500 transition-all"
-            />
+            <input type="text" value={addr} onChange={(e) => setAddr(e.target.value)} placeholder="예: 서울시 송파구" className={INPUT_CLS} />
           </div>
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-3">
           <button
             onClick={onClose}
-            className="py-4 rounded-2xl text-sm font-black text-slate-400 bg-slate-100
-                       hover:bg-slate-200 transition-all active:scale-95"
+            className="py-4 rounded-2xl text-sm font-black text-slate-400 bg-slate-100 hover:bg-slate-200 transition-all active:scale-95"
           >
             취소
           </button>

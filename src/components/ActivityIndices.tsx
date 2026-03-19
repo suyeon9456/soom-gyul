@@ -1,13 +1,49 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Home, Shirt, Dumbbell, Car } from "lucide-react";
 import type { LocationData } from "@/types/air";
+import type { AqiGrade } from "@/types/air";
 
-interface Props {
-  data: LocationData;
+interface Indices {
+  laundry:  string;
+  exercise: string;
+  car:      string;
+  reason:   string;
 }
 
-export default function ActivityIndices({ data }: Props) {
+interface Props {
+  data:      LocationData;
+  mainGrade: AqiGrade;
+}
+
+export default function ActivityIndices({ data, mainGrade }: Props) {
+  const [indices, setIndices] = useState<Indices | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!data) return;
+    setLoading(true);
+
+    const params = new URLSearchParams({
+      pm25:  String(data.pm25),
+      pm10:  String(data.pm10),
+      grade: mainGrade,
+    });
+
+    fetch(`/api/air/indices?${params}`)
+      .then((r) => r.json())
+      .then(setIndices)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [data?.pm25, data?.pm10, mainGrade]);
+
+  const items = [
+    { Icon: Shirt,    label: "빨래 지수", val: indices?.laundry,  good: "실외건조" },
+    { Icon: Dumbbell, label: "야외 운동", val: indices?.exercise, good: "적정" },
+    { Icon: Car,      label: "세차 지수", val: indices?.car,      good: "추천" },
+  ];
+
   return (
     <div className="space-y-4 mb-6">
       {/* Ventilation timing */}
@@ -30,11 +66,7 @@ export default function ActivityIndices({ data }: Props) {
 
       {/* Activity index grid */}
       <div className="grid grid-cols-3 gap-3">
-        {[
-          { Icon: Shirt,    label: "빨래 지수", val: data.indices.laundry,  good: "실외건조" },
-          { Icon: Dumbbell, label: "야외 운동", val: data.indices.exercise, good: "적정" },
-          { Icon: Car,      label: "세차 지수", val: data.indices.car,      good: "추천" },
-        ].map(({ Icon, label, val, good }) => (
+        {items.map(({ Icon, label, val, good }) => (
           <div
             key={label}
             className="bg-white/95 backdrop-blur-md rounded-3xl p-4 border border-white shadow-sm
@@ -42,12 +74,21 @@ export default function ActivityIndices({ data }: Props) {
           >
             <Icon size={20} className="text-slate-400 mb-2" />
             <span className="text-sm font-black text-slate-400 uppercase mb-1">{label}</span>
-            <span className={`text-sm font-black ${val === good ? "text-emerald-600" : "text-rose-600"}`}>
-              {val}
-            </span>
+            {loading || !val ? (
+              <span className="w-10 h-4 bg-slate-100 rounded animate-pulse" />
+            ) : (
+              <span className={`text-sm font-black ${val === good ? "text-emerald-600" : "text-rose-600"}`}>
+                {val}
+              </span>
+            )}
           </div>
         ))}
       </div>
+
+      {/* AI reason */}
+      {indices?.reason && !loading && (
+        <p className="text-xs text-slate-400 font-medium text-center">{indices.reason}</p>
+      )}
     </div>
   );
 }

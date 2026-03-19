@@ -1,4 +1,4 @@
-import { Cigarette, ChevronRight } from "lucide-react";
+import { Cigarette } from "lucide-react";
 
 interface Props {
   locationName: string;
@@ -29,11 +29,8 @@ export default function CigaretteCard({ locationName, cigarettes }: Props) {
         </div>
         <div className="mt-4 pt-4 border-t border-slate-800 flex items-center justify-between">
           <span className="text-sm font-bold text-slate-500 tracking-tight italic">
-            ※ 초미세먼지 농도 기반 WHO 환산 수치 기준
+            ※ 초미세먼지 농도 기반 참고용 수치
           </span>
-          <div className="flex items-center gap-1 text-rose-400 text-sm font-bold">
-            상세보기 <ChevronRight size={12} />
-          </div>
         </div>
       </div>
     </div>
