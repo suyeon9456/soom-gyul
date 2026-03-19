@@ -174,10 +174,7 @@ export default function AirDashboard() {
   const currentData = locationData[activeIdx];
   const pm25Grade = currentData ? getPM25Grade(currentData.pm25) : "GOOD";
   const pm10Grade = currentData ? getPM10Grade(currentData.pm10) : "GOOD";
-  const mainGrade =
-    currentData && currentData.pm25 > currentData.pm10 / 2
-      ? pm25Grade
-      : pm10Grade;
+  const mainGrade = pm25Grade;
   const mainStatus = AQI_LEVELS[mainGrade];
   const pm25Status = AQI_LEVELS[pm25Grade];
   const pm10Status = AQI_LEVELS[pm10Grade];
