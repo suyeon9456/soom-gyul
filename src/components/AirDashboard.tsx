@@ -11,6 +11,7 @@ import ActivityIndices from "./ActivityIndices";
 import PersonaGuide from "./PersonaGuide";
 import SkinCareAlert from "./SkinCareAlert";
 import CigaretteCard from "./CigaretteCard";
+import OutdoorCard from "./OutdoorCard";
 import AddLocationModal from "./AddLocationModal";
 
 import { AppStorage } from "@/lib/storage";
@@ -272,10 +273,17 @@ export default function AirDashboard() {
               mainGrade={mainGrade}
             />
             <SkinCareAlert data={currentData} mainGrade={mainGrade} />
-            <CigaretteCard
-              locationName={locations[activeIdx].name}
-              cigarettes={currentData.cigarettes}
-            />
+            {(mainGrade === "BAD" || mainGrade === "VERY_BAD") ? (
+              <CigaretteCard
+                locationName={locations[activeIdx].name}
+                cigarettes={currentData.cigarettes}
+              />
+            ) : (
+              <OutdoorCard
+                locationName={locations[activeIdx].name}
+                grade={mainGrade}
+              />
+            )}
           </div>
         )}
 
