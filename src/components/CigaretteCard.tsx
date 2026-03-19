@@ -39,7 +39,7 @@ export default function CigaretteCard({ locationName, cigarettes }: Props) {
         </div>
         <div className="mt-4 pt-4 border-t border-slate-800 flex items-center justify-between">
           <span className="text-sm font-bold text-slate-500 tracking-tight italic">
-            초미세먼지 농도 기반 참고용 수치
+            참고용 수치
           </span>
         </div>
       </div>
