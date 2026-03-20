@@ -171,6 +171,17 @@ export default function AirDashboard() {
     setIsModalOpen(false);
   };
 
+  const handleDeleteLocation = (idx: number) => {
+    setLocations((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      const extra = next.slice(DEFAULT_LOCATIONS.length);
+      AppStorage.setItem("soomgyul-locations", JSON.stringify(extra));
+      return next;
+    });
+    setLocationData((prev) => prev.filter((_, i) => i !== idx));
+    setActiveIdx((prev) => Math.max(0, prev >= idx ? prev - 1 : prev));
+  };
+
   /* 현재 탭 데이터 */
   const currentData = locationData[activeIdx];
   const pm25Grade = currentData ? getPM25Grade(currentData.pm25) : "GOOD";
@@ -222,6 +233,7 @@ export default function AirDashboard() {
           locations={locations}
           activeIdx={activeIdx}
           onSelect={setActiveIdx}
+          onDelete={handleDeleteLocation}
         />
 
         {/* Content */}
