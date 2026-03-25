@@ -102,13 +102,27 @@ export default function AirDashboard() {
   /* 특정 위치 데이터 fetch */
   const fetchLocationData = useCallback(
     async (loc: Location): Promise<LocationData> => {
-      let stationName = loc.stationName;
-      if (!stationName && loc.id === "current") {
-        stationName = await resolveCurrentStation();
-      }
-      if (!stationName) stationName = "종로구"; // fallback
+      let stationName: string | undefined;
+      let sido: string | undefined;
 
-      const api = await fetchAirData(stationName);
+      if (loc.id === "current") {
+        stationName = await resolveCurrentStation();
+      } else {
+        // 구체적인 측정소명 먼저 (sido 없는 것), 없으면 sido fallback
+        const specific = STATIONS.filter((s) => !s.sido && loc.addr.includes(s.name))
+          .sort((a, b) => b.name.length - a.name.length)[0];
+        if (specific) {
+          stationName = specific.name;
+        } else {
+          const sidoStation = STATIONS.filter((s) => !!s.sido && loc.addr.includes(s.name))[0];
+          sido = sidoStation?.sido;
+        }
+        if (!stationName && !sido) stationName = "종로구";
+      }
+
+      if (!stationName && !sido) stationName = "종로구"; // fallback
+
+      const api = await fetchAirData(stationName ?? "", sido);
       return {
         pm25: api.pm25,
         pm10: api.pm10,
@@ -153,13 +167,11 @@ export default function AirDashboard() {
   }, [activeIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddLocation = (name: string, addr: string) => {
-    const matched = STATIONS.find((s) => addr.includes(s.name));
     const newLoc: Location = {
       id: `loc-${Date.now()}`,
       name,
       addr,
       iconType: "map",
-      stationName: matched?.name,
     };
     setLocations((prev) => {
       const next = [...prev, newLoc];

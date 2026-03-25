@@ -1,6 +1,6 @@
 "use client";
 
-import { Sun, Wind, Bike, TreePine } from "lucide-react";
+import { Sun } from "lucide-react";
 import type { AqiGrade } from "@/types/air";
 
 interface Props {

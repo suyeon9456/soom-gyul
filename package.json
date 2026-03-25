@@ -3,13 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "granite dev",
+    "build": "ait build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy": "ait deploy"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
+    "@apps-in-toss/web-framework": "^2.1.0",
     "lucide-react": "^0.577.0",
     "next": "14.2.28",
     "react": "^18",

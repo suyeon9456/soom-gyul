@@ -2,13 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
-import type { LocationData } from "@/types/air";
-import type { AqiGrade } from "@/types/air";
+import type { LocationData, AqiGrade } from "@/types/air";
 
 interface Props {
   data:      LocationData;
   mainGrade: AqiGrade;
 }
+
+const ANTHROPIC_API_KEY = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY!;
+
+const GRADE_LABEL: Record<string, string> = {
+  GOOD: "좋음", MODERATE: "보통", BAD: "나쁨", VERY_BAD: "매우 나쁨",
+};
 
 export default function SkinCareAlert({ data, mainGrade }: Props) {
   const [text,    setText]    = useState("");
@@ -19,15 +24,32 @@ export default function SkinCareAlert({ data, mainGrade }: Props) {
     setText("");
     setLoading(true);
 
-    const params = new URLSearchParams({
-      pm25:  String(data.pm25),
-      pm10:  String(data.pm10),
-      grade: mainGrade,
-    });
-
     const controller = new AbortController();
 
-    fetch(`/api/air/skincare?${params}`, { signal: controller.signal })
+    fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 200,
+        stream: true,
+        system: `당신은 피부과 전문의입니다. 규칙을 반드시 지키세요.
+- 마크다운(**, ##, *, #) 절대 사용 금지. 일반 텍스트만 사용.
+- 2~3문장 이내로만 작성.
+- 피부 영향 1가지 + 즉각적인 행동 1가지만 포함.
+- 친근하고 실용적인 톤, 한국어로만 답하세요.`,
+        messages: [{
+          role: "user",
+          content: `PM2.5 ${data.pm25}µg/m³, PM10 ${data.pm10}µg/m³ (등급: ${GRADE_LABEL[mainGrade] ?? mainGrade}) 기준으로 피부 영향을 알려주세요.`,
+        }],
+      }),
+    })
       .then(async (res) => {
         const reader = res.body?.getReader();
         if (!reader) return;
@@ -35,14 +57,25 @@ export default function SkinCareAlert({ data, mainGrade }: Props) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          setText((prev) => prev + decoder.decode(value));
+          const lines = decoder.decode(value).split("\n");
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6);
+            if (data === "[DONE]") break;
+            try {
+              const json = JSON.parse(data);
+              if (json.type === "content_block_delta" && json.delta?.type === "text_delta") {
+                setText((prev) => prev + json.delta.text);
+              }
+            } catch {}
+          }
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, [data?.pm25, data?.pm10, mainGrade]);
+  }, [data?.pm25, data?.pm10, mainGrade]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="bg-gradient-to-r from-rose-50/80 to-orange-50/80 backdrop-blur-md rounded-3xl p-5 mb-6

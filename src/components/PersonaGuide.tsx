@@ -16,6 +16,45 @@ type PersonaTexts = { child: string; adult: string; senior: string };
 
 const PERSONA_ICONS = { child: Baby, adult: User, senior: HeartPulse };
 
+const ANTHROPIC_API_KEY = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY!;
+
+const GRADE_LABEL: Record<string, string> = {
+  GOOD: "좋음", MODERATE: "보통", BAD: "나쁨", VERY_BAD: "매우 나쁨",
+};
+
+const PERSONAS = {
+  child:  "어린이 (12세 이하)",
+  adult:  "성인",
+  senior: "고령자 (65세 이상)",
+};
+
+async function fetchPersonaText(persona: string, pm25: number, pm10: number, grade: string): Promise<string> {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 200,
+      system: `대기질 건강 전문가. 아래 형식으로만 한국어로 답하세요. 마크다운 기호(**, ##, -, *) 절대 사용 금지. 각 항목은 한 줄로.
+
+건강 영향: (1문장)
+권장 행동: (행동1 · 행동2)`,
+      messages: [{
+        role: "user",
+        content: `PM2.5 ${pm25}µg/m³, PM10 ${pm10}µg/m³ (${GRADE_LABEL[grade] ?? grade}) / 대상: ${PERSONAS[persona as keyof typeof PERSONAS]}`,
+      }],
+    }),
+  });
+  const json = await res.json();
+  const block = json.content?.find((b: { type: string }) => b.type === "text");
+  return block?.text?.trim() ?? "";
+}
+
 export default function PersonaGuide({ activePersona, onSelect, data, mainGrade }: Props) {
   const [texts,   setTexts]   = useState<PersonaTexts | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,22 +64,15 @@ export default function PersonaGuide({ activePersona, onSelect, data, mainGrade 
     setTexts(null);
     setLoading(true);
 
-    const params = new URLSearchParams({
-      pm25:  String(data.pm25),
-      pm10:  String(data.pm10),
-      grade: mainGrade,
-    });
-
-    const controller = new AbortController();
-
-    fetch(`/api/air/persona?${params}`, { signal: controller.signal })
-      .then((res) => res.json())
-      .then((json) => { if (!json.error) setTexts(json); })
+    Promise.all([
+      fetchPersonaText("child",  data.pm25, data.pm10, mainGrade),
+      fetchPersonaText("adult",  data.pm25, data.pm10, mainGrade),
+      fetchPersonaText("senior", data.pm25, data.pm10, mainGrade),
+    ])
+      .then(([child, adult, senior]) => setTexts({ child, adult, senior }))
       .catch(() => {})
       .finally(() => setLoading(false));
-
-    return () => controller.abort();
-  }, [data?.pm25, data?.pm10, mainGrade]);
+  }, [data?.pm25, data?.pm10, mainGrade]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentText = texts?.[activePersona as keyof PersonaTexts] ?? "";
 

@@ -35,7 +35,10 @@ export default function AddLocationModal({ onAdd, onClose }: Props) {
     timerRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const res  = await fetch(`/api/kakao/search?q=${encodeURIComponent(query)}`);
+        const res = await fetch(
+          `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&size=10`,
+          { headers: { Authorization: `KakaoAK ${process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY}` } },
+        );
         const data = await res.json();
         setResults(data.documents ?? []);
       } catch {
