@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Wind, RefreshCw, MapPin, Plus } from "lucide-react";
+import { RefreshCw, MapPin, Plus } from "lucide-react";
 
 import MeshGradient from "./MeshGradient";
 import Skeleton from "./Skeleton";
@@ -11,8 +11,10 @@ import ActivityIndices from "./ActivityIndices";
 import PersonaGuide from "./PersonaGuide";
 import SkinCareAlert from "./SkinCareAlert";
 import CigaretteCard from "./CigaretteCard";
+import OutdoorCard from "./OutdoorCard";
 import AddLocationModal from "./AddLocationModal";
 
+import { AppStorage } from "@/lib/storage";
 import { AQI_LEVELS, getPM25Grade, getPM10Grade } from "@/constants/aqi";
 import { STATIONS } from "@/constants/stations";
 import {
@@ -30,20 +32,6 @@ const DEFAULT_LOCATIONS: Location[] = [
     name: "현 위치",
     addr: "위치 확인 중...",
     iconType: "navigation",
-  },
-  {
-    id: "home",
-    name: "우리 집",
-    addr: "서울시 종로구",
-    iconType: "home",
-    stationName: "종로구",
-  },
-  {
-    id: "office",
-    name: "회사",
-    addr: "서울시 성동구",
-    iconType: "building",
-    stationName: "성동구",
   },
 ];
 
@@ -70,6 +58,17 @@ export default function AirDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [locations, setLocations] = useState<Location[]>(DEFAULT_LOCATIONS);
   const [locationData, setLocationData] = useState<LocationData[]>([]);
+
+  /* 저장된 위치 불러오기 */
+  useEffect(() => {
+    AppStorage.getItem("soomgyul-locations").then((raw) => {
+      if (!raw) return;
+      try {
+        const extra: Location[] = JSON.parse(raw);
+        if (extra.length) setLocations([...DEFAULT_LOCATIONS, ...extra]);
+      } catch {}
+    });
+  }, []);
 
   /* 현 위치 → 가장 가까운 측정소명 취득 */
   const resolveCurrentStation = useCallback(async (): Promise<string> => {
@@ -103,13 +102,27 @@ export default function AirDashboard() {
   /* 특정 위치 데이터 fetch */
   const fetchLocationData = useCallback(
     async (loc: Location): Promise<LocationData> => {
-      let stationName = loc.stationName;
-      if (!stationName && loc.id === "current") {
-        stationName = await resolveCurrentStation();
-      }
-      if (!stationName) stationName = "종로구"; // fallback
+      let stationName: string | undefined;
+      let sido: string | undefined;
 
-      const api = await fetchAirData(stationName);
+      if (loc.id === "current") {
+        stationName = await resolveCurrentStation();
+      } else {
+        // 구체적인 측정소명 먼저 (sido 없는 것), 없으면 sido fallback
+        const specific = STATIONS.filter((s) => !s.sido && loc.addr.includes(s.name))
+          .sort((a, b) => b.name.length - a.name.length)[0];
+        if (specific) {
+          stationName = specific.name;
+        } else {
+          const sidoStation = STATIONS.filter((s) => !!s.sido && loc.addr.includes(s.name))[0];
+          sido = sidoStation?.sido;
+        }
+        if (!stationName && !sido) stationName = "종로구";
+      }
+
+      if (!stationName && !sido) stationName = "종로구"; // fallback
+
+      const api = await fetchAirData(stationName ?? "", sido);
       return {
         pm25: api.pm25,
         pm10: api.pm10,
@@ -154,27 +167,38 @@ export default function AirDashboard() {
   }, [activeIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddLocation = (name: string, addr: string) => {
-    const matched = STATIONS.find((s) => addr.includes(s.name));
     const newLoc: Location = {
       id: `loc-${Date.now()}`,
       name,
       addr,
       iconType: "map",
-      stationName: matched?.name,
     };
-    setLocations((prev) => [...prev, newLoc]);
+    setLocations((prev) => {
+      const next = [...prev, newLoc];
+      const extra = next.slice(DEFAULT_LOCATIONS.length);
+      AppStorage.setItem("soomgyul-locations", JSON.stringify(extra));
+      return next;
+    });
     setActiveIdx(locations.length);
     setIsModalOpen(false);
+  };
+
+  const handleDeleteLocation = (idx: number) => {
+    setLocations((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      const extra = next.slice(DEFAULT_LOCATIONS.length);
+      AppStorage.setItem("soomgyul-locations", JSON.stringify(extra));
+      return next;
+    });
+    setLocationData((prev) => prev.filter((_, i) => i !== idx));
+    setActiveIdx((prev) => Math.max(0, prev >= idx ? prev - 1 : prev));
   };
 
   /* 현재 탭 데이터 */
   const currentData = locationData[activeIdx];
   const pm25Grade = currentData ? getPM25Grade(currentData.pm25) : "GOOD";
   const pm10Grade = currentData ? getPM10Grade(currentData.pm10) : "GOOD";
-  const mainGrade =
-    currentData && currentData.pm25 > currentData.pm10 / 2
-      ? pm25Grade
-      : pm10Grade;
+  const mainGrade = pm25Grade;
   const mainStatus = AQI_LEVELS[mainGrade];
   const pm25Status = AQI_LEVELS[pm25Grade];
   const pm10Status = AQI_LEVELS[pm10Grade];
@@ -189,9 +213,7 @@ export default function AirDashboard() {
         {/* Header */}
         <header className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
-            <div className="bg-blue-600 p-2 rounded-xl text-white shadow-lg">
-              <Wind size={20} />
-            </div>
+            <img src="/logo.png" alt="숨결" className="w-9 h-9 rounded-xl" />
             <h1 className="text-lg font-bold tracking-tight text-slate-800">
               숨결 실시간 대기
             </h1>
@@ -223,6 +245,7 @@ export default function AirDashboard() {
           locations={locations}
           activeIdx={activeIdx}
           onSelect={setActiveIdx}
+          onDelete={handleDeleteLocation}
         />
 
         {/* Content */}
@@ -266,16 +289,25 @@ export default function AirDashboard() {
               pm10Status={pm10Status}
               data={currentData}
             />
-            <ActivityIndices data={currentData} />
+            <ActivityIndices data={currentData} mainGrade={mainGrade} />
             <PersonaGuide
               activePersona={activePersona}
               onSelect={setActivePersona}
+              data={currentData}
+              mainGrade={mainGrade}
             />
-            <SkinCareAlert />
-            <CigaretteCard
-              locationName={locations[activeIdx].name}
-              cigarettes={currentData.cigarettes}
-            />
+            <SkinCareAlert data={currentData} mainGrade={mainGrade} />
+            {(mainGrade === "BAD" || mainGrade === "VERY_BAD") ? (
+              <CigaretteCard
+                locationName={locations[activeIdx].name}
+                cigarettes={currentData.cigarettes}
+              />
+            ) : (
+              <OutdoorCard
+                locationName={locations[activeIdx].name}
+                grade={mainGrade}
+              />
+            )}
           </div>
         )}
 
@@ -288,11 +320,7 @@ export default function AirDashboard() {
         )}
 
         <footer className="text-center pb-12 opacity-30">
-          <p className="text-sm font-bold uppercase tracking-[0.2em] leading-loose text-slate-800 font-mono">
-            에어코리아 실시간 대기질 데이터
-            <br />
-            한국환경공단 제공
-          </p>
+          <p className="text-sm font-bold uppercase tracking-[0.2em] leading-loose text-slate-800 font-mono"></p>
         </footer>
       </div>
     </div>

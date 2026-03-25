@@ -6,6 +6,13 @@ export const metadata: Metadata = {
   description: "페르소나 맞춤형 프리미엄 대기질 관리 앱",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
