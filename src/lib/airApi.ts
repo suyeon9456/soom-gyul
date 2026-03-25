@@ -22,7 +22,7 @@ export interface NearbyStationResponse {
   distance: number;
 }
 
-const BASE = "http://apis.data.go.kr/B552584/ArpltnInforInqireSvc";
+const BASE = "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc";
 const API_KEY = process.env.NEXT_PUBLIC_AIR_KOREA_API_KEY!;
 
 interface RawItem {
